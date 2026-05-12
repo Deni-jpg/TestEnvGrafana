@@ -53,28 +53,10 @@
     },
 
     {
-      "id": 3,
-      "type": "stat",
-      "title": "⏱️ P95 Latency (ms)",
-      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
-      "datasource": { "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "decimals": 0,
-          "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":100},{"color":"red","value":500}] }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
-      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000" }]
-    },
-
-    {
       "id": 4,
       "type": "stat",
       "title": "📈 Total Requests",
-      "gridPos": { "x": 12, "y": 1, "w": 3, "h": 4 },
+      "gridPos": { "x": 8, "y": 1, "w": 3, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -85,7 +67,7 @@
       "id": 5,
       "type": "stat",
       "title": "⚠️ Total Errors",
-      "gridPos": { "x": 15, "y": 1, "w": 3, "h": 4 },
+      "gridPos": { "x": 11, "y": 1, "w": 3, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "red" } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
@@ -96,22 +78,11 @@
       "id": 6,
       "type": "stat",
       "title": "🏃 Avg Latency (ms)",
-      "gridPos": { "x": 18, "y": 1, "w": 3, "h": 4 },
+      "gridPos": { "x": 14, "y": 1, "w": 3, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
       "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_request_duration_seconds_sum[5m])) / sum(rate(fruit_app_request_duration_seconds_count[5m])) * 1000" }]
-    },
-
-    {
-      "id": 7,
-      "type": "stat",
-      "title": "🟢 P99 Latency (ms)",
-      "gridPos": { "x": 21, "y": 1, "w": 3, "h": 4 },
-      "datasource": { "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 } },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
-      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000" }]
     },
 
     {
@@ -252,21 +223,10 @@
     },
 
     {
-      "id": 41,
-      "type": "timeseries",
-      "title": "P95 Latency by Endpoint",
-      "gridPos": { "x": 12, "y": 33, "w": 12, "h": 7 },
-      "datasource": { "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
-      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
-      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (endpoint, le)) * 1000", "legendFormat": "{{endpoint}}" }]
-    },
-
-    {
       "id": 105,
       "type": "row",
       "title": "📋 SUMMARY: All Endpoints Performance",
-      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
+      "gridPos": { "x": 0, "y": 33, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -274,7 +234,7 @@
       "id": 50,
       "type": "table",
       "title": "Endpoint Performance Summary",
-      "gridPos": { "x": 0, "y": 41, "w": 24, "h": 8 },
+      "gridPos": { "x": 0, "y": 34, "w": 24, "h": 8 },
       "datasource": { "uid": "prometheus" },
       "options": { "showHeader": true, "sortBy": [{ "displayName": "Rate", "desc": true }] },
       "targets": [
