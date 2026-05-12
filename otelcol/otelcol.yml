@@ -1,0 +1,119 @@
+receivers:
+
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins: ["*"]
+
+  # Métricas do host — lê directamente do /proc do container (WSL2 partilha o kernel)
+  hostmetrics:
+    collection_interval: 15s
+    scrapers:
+      cpu: {}
+      memory: {}
+      disk: {}
+      filesystem:
+        exclude_mount_points:
+          mount_points: [/proc/*, /sys/*, /dev/*]
+          match_type: regexp
+        exclude_fs_types:
+          fs_types: [autofs, binfmt_misc, bpf, cgroup2fs, configfs, debugfs, devpts,
+                     devtmpfs, fusectl, hugetlbfs, mqueue, nsfs, overlay, proc, procfs,
+                     pstore, rpc_pipefs, securityfs, selinuxfs, squashfs, sysfs, tracefs]
+          match_type: strict
+      network: {}
+      load: {}
+      processes: {}
+
+  # Métricas dos containers Docker — api_version força cliente compatível
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 15s
+    timeout: 20s
+    api_version: "1.44"
+
+  # Logs dos containers
+  filelog/containers:
+    include:
+      - /var/lib/docker/containers/*/*.log
+    start_at: end
+    include_file_path: true
+    include_file_name: false
+    operators:
+      - type: json_parser
+        timestamp:
+          parse_from: attributes.time
+          layout: "%Y-%m-%dT%H:%M:%S.%LZ"
+      - type: move
+        from: attributes.log
+        to: body
+      - type: regex_parser
+        regex: '/var/lib/docker/containers/(?P<container_id>[^/]+)/'
+        parse_from: attributes["log.file.path"]
+      - type: move
+        from: attributes.container_id
+        to: resource["container.id"]
+
+processors:
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+
+  attributes/loki_labels:
+    actions:
+      - action: insert
+        key: loki.resource.labels
+        value: container.id
+
+exporters:
+
+  # Prometheus scrape endpoint — Prometheus vai buscar aqui (simples e fiável)
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    default_labels_enabled:
+      exporter: false
+      job: true
+      instance: false
+      level: false
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+
+  pipelines:
+
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo]
+
+    metrics:
+      receivers: [otlp, hostmetrics, docker_stats]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp, filelog/containers]
+      processors: [memory_limiter, attributes/loki_labels, batch]
+      exporters: [loki]
