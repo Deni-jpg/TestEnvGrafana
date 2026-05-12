@@ -1,93 +1,98 @@
-# Observability Stack — Grafana + Prometheus + Loki + Tempo + OTel Collector
+Observability Stack --- Grafana + Prometheus + Loki + Tempo + OTel Collector
+==========================================================================
 
-## Arquitetura
+Arquitetura Simplificada
+------------------------
+
+Nesta configuração, o **OpenTelemetry Collector** é o único componente que toca no sistema operacional e nos containers, eliminando a necessidade de agentes externos como Node Exporter ou cAdvisor.
+
+Fragmento do código
 
 ```
-                    ┌─────────────────────────────┐
-  Apps / Serviços   │   OpenTelemetry Collector    │
-  ──OTLP──────────► │                             │
-                    │  receivers:                  │
-  Node Exporter     │    otlp (gRPC :4317)         │
-  ──scrape──────►   │    otlp (HTTP :4318)         │
-                    │    filelog/containers        │
-  cAdvisor          │    prometheus (interno)      │
-  ──scrape──────►   │                             │
-                    │  exporters:                  │
-                    │    traces  → Tempo           │
-                    │    metrics → Prometheus      │
-                    │    logs    → Loki            │
-                    └─────────────────────────────┘
-                              │
-                 ┌────────────┼────────────┐
-                 ▼            ▼            ▼
-              Tempo      Prometheus       Loki
-                 └────────────┴────────────┘
-                              │
-                           Grafana
-                        http://localhost:3000
+graph TD
+    Apps[Aplicações / Serviços] -- OTLP --> OTel[OTel Collector]
+    Host[Métricas do Host] -- Interno --> OTel
+    Logs[Logs de Containers] -- Ingestão --> OTel
+
+    OTel -- Métricas --> Prom[Prometheus]
+    OTel -- Logs --> Loki[Loki]
+    OTel -- Traces --> Tempo[Tempo]
+
+    Prom -- Visualização --> Grafana[Grafana]
+    Loki -- Visualização --> Grafana
+    Tempo -- Visualização --> Grafana
+
 ```
 
-## Serviços
+Inventário de Serviços
+----------------------
 
-| Serviço           | Porta  | Função                                           |
-|-------------------|--------|--------------------------------------------------|
-| Grafana           | 3000   | Dashboards e visualização                        |
-| Prometheus        | 9090   | Armazenamento de métricas (TSDB)                 |
-| Node Exporter     | 9100   | Métricas do sistema (CPU, RAM, disco, rede)      |
-| cAdvisor          | 8080   | Métricas dos containers Docker                   |
-| Loki              | 3100   | Armazenamento de logs                            |
-| Tempo             | 3200   | Armazenamento de traces distribuídos             |
-| OTel Collector    | 4317/4318 | Ponto de entrada único para toda a telemetria |
+| **Serviço** | **Porta** | **Função** |
+| --- | --- | --- |
+| **Grafana** | 3000 | Visualização de dados e Dashboards |
+| **Prometheus** | 9090 | Banco de dados para métricas (TSDB) |
+| **OTel Collector** | 4317/18 | Ponto central: Coleta métricas de host e logs |
+| **Loki** | 3100 | Banco de dados para logs |
+| **Tempo** | 3200 | Banco de dados para traces distribuídos |
 
-## Porquê OTel Collector em vez de Promtail?
+Vantagens desta Configuração
+----------------------------
 
-O **Promtail** só recolhe logs. O **OTel Collector** é um pipeline de telemetria completo:
-- Recebe **traces, métricas e logs** num único endpoint (OTLP)
-- As tuas apps só precisam de enviar para um sítio: `localhost:4317`
-- O Collector decide para onde roteia cada tipo de dado
-- É o standard da indústria (CNCF), agnóstico de vendor
+1.  **Agente Único:** Menos containers rodando em background. O OTel Collector resolve métricas de hardware e logs de software.
 
-## Iniciar
+2.  **Consistência:** Todas as métricas de infraestrutura usam o prefixo `system_` (padrão OTLP), facilitando a criação de alertas universais.
 
-```bash
-cd observability
+3.  **Segurança:** Apenas um serviço (OTel) precisa de permissões de leitura nos volumes do Docker e `/proc`.
+
+Gestão da Stack
+---------------
+
+### Iniciar
+
+Bash
+
+```
 docker compose up -d
-docker compose ps   # verificar se está tudo healthy
+docker compose ps
+
 ```
 
-Aguardar ~30 segundos e abrir: **http://localhost:3000**
+### Dashboard de Sistema
 
-- Login: `admin` / `admin123`
-- Dashboard pré-carregado: **Dashboards → Demo → Sistema — CPU, Memória, Disco**
+Certifique-se de usar o Dashboard com queries baseadas em `system_`.
 
-## Enviar traces da tua app
+-   **Exemplo de CPU:** `system_cpu_time_seconds_total`
 
-Qualquer app com SDK OpenTelemetry envia para:
-- gRPC: `http://localhost:4317`
-- HTTP: `http://localhost:4318`
+-   **Exemplo de RAM:** `system_memory_usage_bytes`
 
-Exemplo com Python:
-```bash
-pip install opentelemetry-distro opentelemetry-exporter-otlp
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-export OTEL_SERVICE_NAME=minha-app
-```
+### Enviar Telemetria da sua App
 
-Exemplo com Node.js:
-```bash
-npm install @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
-# OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-```
+Aponte o SDK da sua aplicação para:
 
-## Ver logs do OTel Collector
+-   **gRPC (Preferencial):** `http://localhost:4317`
 
-```bash
-docker compose logs otelcol -f
-```
+-   **HTTP/JSON:** `http://localhost:4318`
 
-## Parar
+Troubleshooting
+---------------
 
-```bash
-docker compose down        # para e remove containers
-docker compose down -v     # apaga também os volumes (dados)
-```
+-   **Verificar se as métricas do Host estão sendo geradas:**
+
+    Bash
+
+    ```
+    curl http://localhost:8889/metrics | grep system_
+
+    ```
+
+-   **Verificar se os logs estão chegando no Loki:**
+
+    Vá ao **Grafana -> Explore**, selecione o datasource **Loki** e use a query `{job="otel-collector"}` ou `{container_name=~".+"}`.
+
+-   **Limpeza de dados (Reset):**
+
+    Bash
+
+    ```
+    docker compose down -v
+    ```
