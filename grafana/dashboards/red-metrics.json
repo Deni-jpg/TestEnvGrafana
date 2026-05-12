@@ -1,7 +1,7 @@
 {
-  "title": "Fruit Stock App — RED Metrics",
-  "uid": "fruit-app-red",
-  "tags": ["app", "red", "metrics"],
+  "title": "🍎 FruitStore — Complete RED Metrics Dashboard",
+  "uid": "fruit-app-red-complete",
+  "tags": ["app", "red", "metrics", "production"],
   "timezone": "browser",
   "refresh": "5s",
   "time": { "from": "now-1h", "to": "now" },
@@ -11,7 +11,7 @@
     {
       "id": 100,
       "type": "row",
-      "title": "RED Metrics Dashboard",
+      "title": "🔴 KPIs Principais (RED)",
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -19,70 +19,105 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Requests/sec (Rate)",
-      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 4 },
+      "title": "📊 Rate (Req/sec)",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
-          "decimals": 2,
+          "decimals": 1,
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{"color":"blue","value":null},{"color":"green","value":0},{"color":"yellow","value":10},{"color":"red","value":20}] }
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":5},{"color":"red","value":20}] }
         }
       },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto" },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum(rate(fruit_app_requests_total[1m]))"
-      }]
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_requests_total[1m]))" }]
     },
 
     {
       "id": 2,
       "type": "stat",
-      "title": "Error Rate (%)",
-      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 4 },
+      "title": "❌ Error Rate (%)",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "decimals": 2,
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{"color":"green","value":null},{"color":"green","value":0},{"color":"yellow","value":5},{"color":"red","value":10}] }
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":5},{"color":"red","value":10}] }
         }
       },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum(rate(fruit_app_errors_total[1m])) / sum(rate(fruit_app_requests_total[1m])) * 100"
-      }]
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "(sum(rate(fruit_app_errors_total[1m])) / sum(rate(fruit_app_requests_total[1m]))) * 100" }]
     },
 
     {
       "id": 3,
       "type": "stat",
-      "title": "P95 Latency",
-      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 4 },
+      "title": "⏱️ P95 Latency (ms)",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
           "decimals": 0,
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{"color":"green","value":null},{"color":"green","value":0},{"color":"yellow","value":100},{"color":"red","value":500}] }
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":100},{"color":"red","value":500}] }
         }
       },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000" }]
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "📈 Total Requests",
+      "gridPos": { "x": 12, "y": 1, "w": 3, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(fruit_app_requests_total)" }]
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "⚠️ Total Errors",
+      "gridPos": { "x": 15, "y": 1, "w": 3, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "red" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(fruit_app_errors_total)" }]
+    },
+
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "🏃 Avg Latency (ms)",
+      "gridPos": { "x": 18, "y": 1, "w": 3, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000"
-      }]
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_request_duration_seconds_sum[5m])) / sum(rate(fruit_app_request_duration_seconds_count[5m])) * 1000" }]
+    },
+
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "🟢 P99 Latency (ms)",
+      "gridPos": { "x": 21, "y": 1, "w": 3, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000" }]
     },
 
     {
       "id": 101,
       "type": "row",
-      "title": "Rate (Requests)",
+      "title": "📊 RATE: Request Volume & Trends",
       "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -90,47 +125,38 @@
     {
       "id": 10,
       "type": "timeseries",
-      "title": "Request Rate by Endpoint",
+      "title": "Request Rate Over Time",
       "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "gradientMode": "opacity", "showPoints": "never" }
         }
       },
-      "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum by (endpoint) (rate(fruit_app_requests_total[1m]))",
-        "legendFormat": "{{endpoint}}"
-      }]
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_requests_total[30s]))", "legendFormat": "Total" },
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_requests_total{method=\"GET\"}[30s]))", "legendFormat": "GET" },
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_requests_total{method=\"POST\"}[30s]))", "legendFormat": "POST" }
+      ]
     },
 
     {
       "id": 11,
-      "type": "timeseries",
-      "title": "Total Requests (cumulative)",
+      "type": "piechart",
+      "title": "Request Distribution by Endpoint",
       "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
-        }
-      },
-      "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum(fruit_app_requests_total)",
-        "legendFormat": "total"
-      }]
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }, "pieType": "pie", "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (endpoint) (fruit_app_requests_total)", "legendFormat": "{{endpoint}}" }]
     },
 
     {
       "id": 102,
       "type": "row",
-      "title": "Errors",
+      "title": "❌ ERRORS: Error Tracking & Analysis",
       "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -138,47 +164,39 @@
     {
       "id": 20,
       "type": "timeseries",
-      "title": "Error Rate by Endpoint",
+      "title": "Error Rate Over Time (per minute)",
       "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "gradientMode": "opacity" },
+          "color": { "mode": "palette-classic" }
         }
       },
       "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum by (endpoint, status) (rate(fruit_app_errors_total[1m]))",
-        "legendFormat": "{{endpoint}} - {{status}}"
-      }]
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_errors_total{status=\"404\"}[1m]))", "legendFormat": "404 Not Found" },
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_errors_total{status=\"500\"}[1m]))", "legendFormat": "500 Server Error" },
+        { "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_errors_total{status=\"400\"}[1m]))", "legendFormat": "400 Bad Request" }
+      ]
     },
 
     {
       "id": 21,
-      "type": "timeseries",
-      "title": "Total Errors (cumulative)",
+      "type": "barchart",
+      "title": "Error Count by Status Code",
       "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
-        }
-      },
-      "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "sum by (status) (fruit_app_errors_total)",
-        "legendFormat": "{{status}}"
-      }]
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (status) (fruit_app_errors_total)", "legendFormat": "{{status}}" }]
     },
 
     {
       "id": 103,
       "type": "row",
-      "title": "Duration (Latency)",
+      "title": "⏱️ DURATION: Latency Analysis & Percentiles",
       "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -186,53 +204,82 @@
     {
       "id": 30,
       "type": "timeseries",
-      "title": "Request Latency — p50 / p95 / p99",
+      "title": "Latency Percentiles: p50 / p95 / p99 / p99.9",
       "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
+          "custom": { "lineWidth": 2, "fillOpacity": 0, "gradientMode": "none", "showPoints": "never" }
         }
       },
       "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
       "targets": [
-        {
-          "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000",
-          "legendFormat": "p50"
-        },
-        {
-          "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000",
-          "legendFormat": "p95"
-        },
-        {
-          "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000",
-          "legendFormat": "p99"
-        }
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "p50" },
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "p95" },
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "p99" },
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.999, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "p99.9" }
       ]
     },
 
     {
       "id": 31,
-      "type": "timeseries",
-      "title": "Latency by Endpoint",
+      "type": "heatmap",
+      "title": "Latency Distribution Heatmap",
       "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
       "datasource": { "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "custom": { "lineWidth": 2, "fillOpacity": 0 }
-        }
-      },
-      "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi" } },
-      "targets": [{
-        "datasource": { "uid": "prometheus" },
-        "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (endpoint, le)) * 1000",
-        "legendFormat": "{{endpoint}} (p95)"
-      }]
+      "options": { "legend": { "show": true }, "color": { "scheme": "Viridis" }, "tooltip": { "show": true } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le)" }]
+    },
+
+    {
+      "id": 104,
+      "type": "row",
+      "title": "🔍 ENDPOINT ANALYSIS: Performance by Route",
+      "gridPos": { "x": 0, "y": 32, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Request Rate by Endpoint",
+      "gridPos": { "x": 0, "y": 33, "w": 12, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (endpoint) (rate(fruit_app_requests_total[1m]))", "legendFormat": "{{endpoint}}" }]
+    },
+
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "P95 Latency by Endpoint",
+      "gridPos": { "x": 12, "y": 33, "w": 12, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (endpoint, le)) * 1000", "legendFormat": "{{endpoint}}" }]
+    },
+
+    {
+      "id": 105,
+      "type": "row",
+      "title": "📋 SUMMARY: All Endpoints Performance",
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 50,
+      "type": "table",
+      "title": "Endpoint Performance Summary",
+      "gridPos": { "x": 0, "y": 41, "w": 24, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Rate", "desc": true }] },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "sum by (endpoint) (rate(fruit_app_requests_total[5m]))", "format": "table", "instant": true, "refId": "A" }
+      ]
     }
 
   ]
