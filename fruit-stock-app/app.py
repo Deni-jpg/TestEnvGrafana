@@ -92,11 +92,15 @@ def stats():
     </div><div style="background:white;border-radius:10px;padding:1.5rem;box-shadow:0 4px 15px rgba(0,0,0,0.1)"><h3>🔍 Monitorização</h3>
     <ul style="list-style:none"><li style="padding:0.75rem"><strong>Grafana:</strong> <a href="http://localhost:3000" target="_blank" style="color:#667eea">http://localhost:3000</a></li>
     <li style="padding:0.75rem"><strong>Prometheus:</strong> <a href="http://localhost:9090" target="_blank" style="color:#667eea">http://localhost:9090</a></li>
-    <li style="padding:0.75rem"><strong>Métricas:</strong> <a href="/api/metrics" target="_blank" style="color:#667eea">/api/metrics</a></li></ul>
+    <li style="padding:0.75rem"><strong>Métricas:</strong> <a href="/metrics" target="_blank" style="color:#667eea">/metrics</a></li></ul>
     <a href="/" class="btn btn-primary" style="margin-top:1rem">← Loja</a></div></div></body></html>''', 200
 
-@app.route('/api/metrics')
+@app.route('/metrics')
 def metrics():
+    return generate_latest(), 200
+
+@app.route('/api/metrics')
+def api_metrics():
     return generate_latest(), 200
 
 @app.route('/api/health')
