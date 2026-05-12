@@ -19,7 +19,7 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - grafana_data:/var/lib/grafana
@@ -47,6 +47,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=7d"
       - "--web.enable-lifecycle"
+      - "--web.enable-remote-write-receiver"   # recebe métricas do OTel Collector
     networks:
       - observability
 
@@ -78,6 +79,31 @@ services:
     networks:
       - observability
 
+  # ── cAdvisor (métricas dos containers) ────────────────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest # GCR é mais estável que o Docker Hub oficial agora
+    container_name: cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    command:
+      - '--docker_only=true'
+      - '--housekeeping_interval=10s'
+      - '--disable_metrics=advtcp,diskIO,tcp,udp,percpu,sched,process,hugetlb'
+      - '--store_container_labels=true' # Confirmando que queremos as labels
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    networks:
+      - observability
+
   # ── OpenTelemetry Collector ───────────────────────────────────────────────────
   # Ponto central de entrada para traces, métricas e logs das tuas apps.
   # Recebe via OTLP e roteia para Tempo / Prometheus / Loki.
@@ -85,19 +111,14 @@ services:
     image: otel/opentelemetry-collector-contrib:0.100.0
     container_name: otelcol
     restart: unless-stopped
-    user: "0:0"        # precisa de root para aceder ao docker.sock
+    user: "0:0"
     ports:
-      - "4317:4317"     # OTLP gRPC  → traces, métricas, logs das apps
-      - "4318:4318"     # OTLP HTTP  → traces, métricas, logs das apps
-      - "8888:8888"     # métricas internas do próprio collector
-      - "8889:8889"     # prometheus exporter (métricas recebidas pelo collector)
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+      - "8888:8888"     # métricas internas do collector
     volumes:
       - ./otelcol/otelcol.yml:/etc/otelcol/otelcol.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /proc:/hostfs/proc:ro
-      - /sys:/hostfs/sys:ro
-      - /:/hostfs:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro   # filelog (logs dos containers)
     command: --config=/etc/otelcol/otelcol.yml
     networks:
       - observability

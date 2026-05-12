@@ -1,4 +1,19 @@
+# OpenTelemetry Collector — configuração completa
+#
+# Fluxo:
+#   Apps/serviços  ──OTLP──►  receivers
+#   Sistema (CPU/RAM/disco)    hostmetrics
+#   Containers Docker          docker_stats
+#                                 │
+#                    ┌────────────┼────────────┐
+#                    ▼            ▼            ▼
+#                 traces       métricas      logs
+#                    │            │            │
+#                  Tempo     Prometheus       Loki
+
 receivers:
+
+  # OTLP: recebe traces, métricas e logs das tuas apps
   otlp:
     protocols:
       grpc:
@@ -7,36 +22,29 @@ receivers:
         endpoint: 0.0.0.0:4318
         cors:
           allowed_origins: ["*"]
+          
+  prometheus/cadvisor:
+    config:
+      scrape_configs:
+        - job_name: 'cadvisor'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['cadvisor:8080']
 
-  # Métricas do host — root_path permite ler o /proc real do host via volume
+  # Métricas do sistema operativo (substitui Node Exporter)
+  # Lê diretamente /proc e /sys do host via volume mount
   hostmetrics:
-    root_path: /hostfs
-    collection_interval: 10s
+    collection_interval: 15s
     scrapers:
       cpu: {}
       memory: {}
       disk: {}
-      processes: {}
-      filesystem:
-        exclude_mount_points:
-          mount_points: [/proc/*, /sys/*, /dev/*]
-          match_type: regexp
-        exclude_fs_types:
-          fs_types: [autofs, binfmt_misc, bpf, cgroup2fs, configfs, debugfs, devpts,
-                     devtmpfs, fusectl, hugetlbfs, mqueue, nsfs, overlay, proc, procfs,
-                     pstore, rpc_pipefs, securityfs, selinuxfs, squashfs, sysfs, tracefs]
-          match_type: strict
+      filesystem: {}
       network: {}
       load: {}
+      processes: {}
 
-  # Métricas dos containers Docker
-  docker_stats:
-    endpoint: unix:///var/run/docker.sock
-    collection_interval: 15s
-    timeout: 20s
-    api_version: "1.44"
-
-  # Logs dos containers
+  # Logs dos containers Docker
   filelog/containers:
     include:
       - /var/lib/docker/containers/*/*.log
@@ -45,6 +53,7 @@ receivers:
     include_file_name: false
     operators:
       - type: json_parser
+        id: parse_docker
         timestamp:
           parse_from: attributes.time
           layout: "%Y-%m-%dT%H:%M:%S.%LZ"
@@ -52,6 +61,7 @@ receivers:
         from: attributes.log
         to: body
       - type: regex_parser
+        id: extract_container
         regex: '/var/lib/docker/containers/(?P<container_id>[^/]+)/'
         parse_from: attributes["log.file.path"]
       - type: move
@@ -59,57 +69,76 @@ receivers:
         to: resource["container.id"]
 
 processors:
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 512
-    spike_limit_mib: 128
+
+  resourcedetection:
+    detectors: [env, docker]
+    timeout: 5s
 
   batch:
     timeout: 5s
     send_batch_size: 1000
 
-  attributes/loki_labels:
-    actions:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  resource/logs:
+    attributes:
+      - action: insert
+        key: loki.format
+        value: json
       - action: insert
         key: loki.resource.labels
         value: container.id
 
 exporters:
-  # Exportador para o Prometheus fazer o scrape
-  prometheus:
-    endpoint: "0.0.0.0:8889"
 
   otlp/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
 
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+    tls:
+      insecure_skip_verify: true
+
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
     default_labels_enabled:
-      exporter: false
+      exporter: true
       job: true
-      instance: false
-      level: false
+      instance: true
+      level: true
+
+  debug:
+    verbosity: basic
 
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
 
 service:
-  extensions: [health_check]
+  extensions: [health_check, pprof, zpages]
+
   pipelines:
+
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
-      exporters: [otlp/tempo]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [otlp/tempo, debug]
 
     metrics:
-      receivers: [otlp, hostmetrics, docker_stats]
-      processors: [memory_limiter, batch]
-      exporters: [prometheus]
+      receivers: [otlp, hostmetrics, prometheus/cadvisor] # Adicionado aqui
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [prometheusremotewrite]
 
     logs:
       receivers: [otlp, filelog/containers]
-      processors: [memory_limiter, attributes/loki_labels, batch]
-      exporters: [loki]
+      processors: [memory_limiter, resourcedetection, resource/logs, batch]
+      exporters: [loki, debug]

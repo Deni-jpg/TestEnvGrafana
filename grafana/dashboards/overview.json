@@ -1,0 +1,236 @@
+{
+  "title": "Observability Demo — Stack Overview",
+  "uid": "demo-overview",
+  "tags": ["demo", "otel", "cadvisor"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "schemaVersion": 38,
+  "panels": [
+
+    {
+      "id": 100, "type": "row", "title": "Visão Geral",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false
+    },
+
+    {
+      "id": 1, "type": "stat", "title": "Containers Ativos",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{"color":"red","value":null},{"color":"green","value":1}] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "count(container_last_seen{service!=\"\"})"
+      }]
+    },
+
+    {
+      "id": 2, "type": "stat", "title": "Uptime da Stack",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "dtdhms", "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "time() - process_start_time_seconds{job=\"prometheus\"}"
+      }]
+    },
+
+    {
+      "id": 3, "type": "stat", "title": "Logs/min",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "loki" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{
+        "datasource": { "uid": "loki" },
+        "expr": "sum(rate({container_id=~\".+\"}[1m])) * 60",
+        "legendFormat": "logs/min"
+      }]
+    },
+
+    {
+      "id": 4, "type": "stat", "title": "Total Logs (30m)",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "loki" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{
+        "datasource": { "uid": "loki" },
+        "expr": "sum(count_over_time({container_id=~\".+\"}[30m]))"
+      }]
+    },
+
+    {
+      "id": 101, "type": "row", "title": "Sistema (OTel hostmetrics)",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 }, "collapsed": false
+    },
+
+    {
+      "id": 10, "type": "gauge", "title": "Load Average (1m)",
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 2, "min": 0, "max": 8,
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":2},{"color":"red","value":4}] }
+        }
+      },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "system_cpu_load_average_1m" }]
+    },
+
+    {
+      "id": 11, "type": "timeseries", "title": "Load Average — 1m / 5m / 15m",
+      "gridPos": { "x": 6, "y": 6, "w": 9, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "system_cpu_load_average_1m", "legendFormat": "1m" },
+        { "datasource": { "uid": "prometheus" }, "expr": "system_cpu_load_average_5m", "legendFormat": "5m" },
+        { "datasource": { "uid": "prometheus" }, "expr": "system_cpu_load_average_15m", "legendFormat": "15m" }
+      ]
+    },
+
+    {
+      "id": 12, "type": "piechart", "title": "Memória — Distribuição",
+      "gridPos": { "x": 15, "y": 6, "w": 9, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "options": {
+        "pieType": "donut",
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (state) (system_memory_usage_bytes)", "legendFormat": "{{state}}" }]
+    },
+
+    {
+      "id": 13, "type": "timeseries", "title": "Memória ao Longo do Tempo",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 1, "fillOpacity": 25, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "values": ["last"] } },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (state) (system_memory_usage_bytes)", "legendFormat": "{{state}}" }]
+    },
+
+    {
+      "id": 14, "type": "timeseries", "title": "Rede — Throughput (eth0)",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "values": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "sum by (direction) (rate(system_network_io_bytes_total{device=\"eth0\"}[2m]))", "legendFormat": "{{direction}}" }
+      ]
+    },
+
+    {
+      "id": 102, "type": "row", "title": "Containers (cAdvisor)",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 1 }, "collapsed": false
+    },
+
+    {
+      "id": 20, "type": "bargauge", "title": "CPU por Container (%)",
+      "gridPos": { "x": 0, "y": 21, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":50},{"color":"red","value":80}] }
+        }
+      },
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] }, "showUnfilled": true },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (service) (rate(container_cpu_usage_seconds_total{service!=\"\"}[2m])) * 100",
+        "legendFormat": "{{service}}"
+      }]
+    },
+
+    {
+      "id": 21, "type": "bargauge", "title": "Memória por Container",
+      "gridPos": { "x": 12, "y": 21, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":268435456},{"color":"red","value":536870912}] }
+        }
+      },
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] }, "showUnfilled": true },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (service) (container_memory_usage_bytes{service!=\"\"})",
+        "legendFormat": "{{service}}"
+      }]
+    },
+
+    {
+      "id": 22, "type": "timeseries", "title": "CPU dos Containers — Histórico",
+      "gridPos": { "x": 0, "y": 29, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "custom": { "lineWidth": 2, "fillOpacity": 8 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "values": ["last", "max"] } },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (service) (rate(container_cpu_usage_seconds_total{service!=\"\"}[2m])) * 100",
+        "legendFormat": "{{service}}"
+      }]
+    },
+
+    {
+      "id": 23, "type": "timeseries", "title": "Memória dos Containers — Histórico",
+      "gridPos": { "x": 12, "y": 29, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 8 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "values": ["last", "max"] } },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (service) (container_memory_usage_bytes{service!=\"\"})",
+        "legendFormat": "{{service}}"
+      }]
+    },
+
+    {
+      "id": 24, "type": "timeseries", "title": "Rede dos Containers — RX/TX",
+      "gridPos": { "x": 0, "y": 37, "w": 24, "h": 7 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "lineWidth": 2, "fillOpacity": 5 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["last"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "sum by (service) (rate(container_network_receive_bytes_total{service!=\"\"}[2m]))", "legendFormat": "RX {{service}}" },
+        { "datasource": { "uid": "prometheus" }, "expr": "sum by (service) (rate(container_network_transmit_bytes_total{service!=\"\"}[2m]))", "legendFormat": "TX {{service}}" }
+      ]
+    },
+
+    {
+      "id": 103, "type": "row", "title": "Logs (Loki via OTel)",
+      "gridPos": { "x": 0, "y": 44, "w": 24, "h": 1 }, "collapsed": false
+    },
+
+    {
+      "id": 30, "type": "timeseries", "title": "Volume de Logs",
+      "gridPos": { "x": 0, "y": 45, "w": 24, "h": 6 },
+      "datasource": { "uid": "loki" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 1, "fillOpacity": 50, "drawStyle": "bars" } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "datasource": { "uid": "loki" }, "expr": "sum(count_over_time({container_id=~\".+\"}[1m]))", "legendFormat": "logs/min" }]
+    },
+
+    {
+      "id": 31, "type": "logs", "title": "Stream de Logs",
+      "gridPos": { "x": 0, "y": 51, "w": 24, "h": 10 },
+      "datasource": { "uid": "loki" },
+      "options": { "dedupStrategy": "none", "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true, "enableLogDetails": true },
+      "targets": [{ "datasource": { "uid": "loki" }, "expr": "{container_id=~\".+\"}" }]
+    }
+  ]
+}

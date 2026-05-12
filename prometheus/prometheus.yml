@@ -5,17 +5,20 @@ global:
     environment: "demo"
     region: "local"
 
+# As métricas do sistema e dos containers chegam via remote write do OTel Collector.
+# O Prometheus só precisa de se auto-monitorizar aqui.
 scrape_configs:
 
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: "grafana"
+  - job_name: "cadvisor"
+    scrape_interval: 15s
     static_configs:
-      - targets: ["grafana:3000"]
-
-  # Métricas do host e containers via OTel Collector
-  - job_name: "otelcol"
-    static_configs:
-      - targets: ["otelcol:8889"]
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      - source_labels: [container_label_com_docker_compose_service]
+        target_label: service
+      - source_labels: [container_label_com_docker_compose_project]
+        target_label: project
