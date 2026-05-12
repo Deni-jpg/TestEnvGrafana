@@ -1,0 +1,129 @@
+{
+  "title": "Sistema — Observabilidade Completa",
+  "uid": "system-overview-full-v2",
+  "tags": ["opentelemetry", "infra"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    { "id": 10, "type": "row", "title": "Visão Geral", "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 1, "type": "stat", "title": "CPU",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":70},{"color":"red","value":90}] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto" },
+      "targets": [{ "expr": "100 - (avg(rate(system_cpu_time_seconds_total{state=\"idle\"}[2m])) * 100)", "legendFormat": "CPU %" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Memória",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":90}] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [{ "expr": "(1 - sum(system_memory_usage_bytes{state=~\"free|cached|buffered\"}) / sum(system_memory_usage_bytes)) * 100", "legendFormat": "RAM %" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Disco (WSL)",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":75},{"color":"red","value":90}] } }
+      },
+      "targets": [{ "expr": "100 * (1 - sum(system_filesystem_usage_bytes{state=\"free\", device=\"/dev/sdd\"}) / sum(system_filesystem_usage_bytes{device=\"/dev/sdd\"}))", "legendFormat": "Disco %" }]
+    },
+    {
+      "id": 11, "type": "stat", "title": "Load (1m)",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "targets": [{ "expr": "system_cpu_load_average_1m", "legendFormat": "Load 1m" }]
+    },
+    {
+      "id": 12, "type": "stat", "title": "Processos",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "targets": [{ "expr": "sum(system_processes_count)", "legendFormat": "Processos" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Uptime",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [{ "expr": "system_uptime", "legendFormat": "Uptime" }]
+    },
+    { "id": 20, "type": "row", "title": "CPU & Load", "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 5, "type": "timeseries", "title": "CPU ao Longo do Tempo",
+      "gridPos": { "x": 0, "y": 6, "w": 16, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "targets": [
+        { "expr": "100 - (avg(rate(system_cpu_time_seconds_total{state=\"idle\"}[2m])) * 100)", "legendFormat": "Total" },
+        { "expr": "avg(rate(system_cpu_time_seconds_total{state=\"user\"}[2m])) * 100", "legendFormat": "User" },
+        { "expr": "avg(rate(system_cpu_time_seconds_total{state=\"system\"}[2m])) * 100", "legendFormat": "System" }
+      ]
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "Load Average",
+      "gridPos": { "x": 16, "y": 6, "w": 8, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        { "expr": "system_cpu_load_average_1m", "legendFormat": "1 min" },
+        { "expr": "system_cpu_load_average_5m", "legendFormat": "5 min" },
+        { "expr": "system_cpu_load_average_15m", "legendFormat": "15 min" }
+      ]
+    },
+    { "id": 30, "type": "row", "title": "Memória", "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 6, "type": "timeseries", "title": "Uso de Memória",
+      "gridPos": { "x": 0, "y": 15, "w": 24, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        { "expr": "sum(system_memory_usage_bytes)", "legendFormat": "Total" },
+        { "expr": "system_memory_usage_bytes{state=\"used\"}", "legendFormat": "Usada" },
+        { "expr": "system_memory_usage_bytes{state=\"cached\"}", "legendFormat": "Cache" },
+        { "expr": "system_memory_usage_bytes{state=\"free\"}", "legendFormat": "Livre" }
+      ]
+    },
+    { "id": 40, "type": "row", "title": "Rede & Disco", "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 7, "type": "timeseries", "title": "Rede — Throughput",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "sum(rate(system_network_io_bytes_total{direction=\"receive\",device!~\"lo|docker.*|veth.*\"}[2m]))", "legendFormat": "IN" },
+        { "expr": "sum(rate(system_network_io_bytes_total{direction=\"transmit\",device!~\"lo|docker.*|veth.*\"}[2m]))", "legendFormat": "OUT" }
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Disco — I/O",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "rate(system_disk_io_bytes_total{direction=\"read\",device!~\"loop.*|dm-.*\"}[2m])", "legendFormat": "Leitura {{device}}" },
+        { "expr": "rate(system_disk_io_bytes_total{direction=\"write\",device!~\"loop.*|dm-.*\"}[2m])", "legendFormat": "Escrita {{device}}" }
+      ]
+    },
+    { "id": 50, "type": "row", "title": "Logs", "gridPos": { "x": 0, "y": 32, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 9, "type": "logs", "title": "Logs dos Containers",
+      "gridPos": { "x": 0, "y": 33, "w": 24, "h": 10 },
+      "datasource": { "uid": "loki" },
+      "targets": [{ "expr": "{job=~\".+\"}" }]
+    }
+  ],
+  "schemaVersion": 38
+}

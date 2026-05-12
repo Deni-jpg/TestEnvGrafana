@@ -104,6 +104,18 @@ services:
     networks:
       - observability
 
+  # ── Fruit Stock App (Demo RED Metrics) ────────────────────────────────────────
+  fruit-stock-app:
+    build:
+      context: ./fruit-stock-app
+      dockerfile: Dockerfile
+    container_name: fruit-stock-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    networks:
+      - observability
+
   # ── OpenTelemetry Collector ───────────────────────────────────────────────────
   # Ponto central de entrada para traces, métricas e logs das tuas apps.
   # Recebe via OTLP e roteia para Tempo / Prometheus / Loki.

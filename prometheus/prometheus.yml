@@ -22,3 +22,8 @@ scrape_configs:
         target_label: service
       - source_labels: [container_label_com_docker_compose_project]
         target_label: project
+
+  - job_name: "fruit-stock-app"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["fruit-stock-app:5000"]
