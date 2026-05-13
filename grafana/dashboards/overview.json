@@ -1,7 +1,7 @@
 {
-  "title": "Observability Demo — Stack Overview",
+  "title": "Observability demo",
   "uid": "demo-overview",
-  "tags": ["demo", "otel", "cadvisor"],
+  "tags": ["demo", "sistemas"],
   "timezone": "browser",
   "refresh": "10s",
   "time": { "from": "now-30m", "to": "now" },
