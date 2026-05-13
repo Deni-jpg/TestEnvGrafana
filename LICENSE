@@ -1,21 +1,59 @@
-MIT License
+PROPRIETARY LICENSE
 
-Copyright (c) 2026 Daniel Coelho
+Copyright (c) 2026 Daniel Coelho. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+TERMS AND CONDITIONS
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. RESTRICTIONS
+   This source code and all associated files, documentation, and assets
+   (collectively, the "Software") are the exclusive property of the
+   copyright holder. Without prior written permission from the copyright
+   holder, you may NOT:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   a) Use the Software, in whole or in part, for any purpose;
+   b) Copy, reproduce, or duplicate the Software;
+   c) Modify, adapt, translate, or create derivative works based on the Software;
+   d) Distribute, sublicense, lease, rent, lend, or transfer the Software
+      to any third party;
+   e) Reverse engineer, decompile, or disassemble the Software;
+   f) Use the Software for commercial, educational, personal, or any
+      other purpose.
+
+2. VIEWING ONLY
+   The public availability of this repository does NOT constitute a grant
+   of any license or right to use the Software. Access to view the source
+   code is permitted solely for evaluation purposes and does not imply
+   permission to use, copy, modify, or distribute.
+
+3. PERMISSION REQUESTS
+   Any use of the Software requires explicit, prior, written authorization
+   from the copyright holder. Permission requests must be submitted to:
+
+   Email: danielcariocacoelho@gmail.com
+
+4. INTELLECTUAL PROPERTY
+   All intellectual property rights, including but not limited to
+   copyrights, patents, trade secrets, and trademarks, remain exclusively
+   with the copyright holder.
+
+5. ENFORCEMENT
+   Any unauthorized use, reproduction, modification, or distribution of
+   the Software constitutes a violation of this license and applicable
+   copyright law. The copyright holder reserves the right to pursue all
+   available legal remedies, including but not limited to:
+
+   a) Injunctive relief;
+   b) Monetary damages;
+   c) Recovery of legal fees and costs.
+
+6. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED. THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY CLAIM,
+   DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OR INABILITY TO USE
+   THE SOFTWARE.
+
+7. GOVERNING LAW
+   This license shall be governed by and construed in accordance with the
+   laws of [TEU PAÍS / ESTADO], without regard to conflict of law principles.
+
+For inquiries, contact: [TEU EMAIL]
