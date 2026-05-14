@@ -47,9 +47,28 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=7d"
       - "--web.enable-lifecycle"
-      - "--web.enable-remote-write-receiver"   # recebe métricas do OTel Collector
+      - "--web.enable-remote-write-receiver"
     networks:
       - observability
+
+  # ── Alertmanager ─────────────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+    networks:
+      - observability
+    depends_on:
+      - prometheus
 
   # ── Loki ─────────────────────────────────────────────────────────────────────
   loki:
@@ -79,9 +98,9 @@ services:
     networks:
       - observability
 
-  # ── cAdvisor (métricas dos containers) ────────────────────────────────────────
+  # ── cAdvisor ─────────────────────────────────────────────────────────────────
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest # GCR é mais estável que o Docker Hub oficial agora
+    image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
     privileged: true
     devices:
@@ -90,7 +109,7 @@ services:
       - '--docker_only=true'
       - '--housekeeping_interval=10s'
       - '--disable_metrics=advtcp,diskIO,tcp,udp,percpu,sched,process,hugetlb'
-      - '--store_container_labels=true' # Confirmando que queremos as labels
+      - '--store_container_labels=true'
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -104,7 +123,7 @@ services:
     networks:
       - observability
 
-  # ── Fruit Stock App (Demo RED Metrics) ────────────────────────────────────────
+  # ── Fruit Stock App ───────────────────────────────────────────────────────────
   fruit-stock-app:
     build:
       context: ./fruit-stock-app
@@ -117,20 +136,18 @@ services:
       - observability
 
   # ── OpenTelemetry Collector ───────────────────────────────────────────────────
-  # Ponto central de entrada para traces, métricas e logs das tuas apps.
-  # Recebe via OTLP e roteia para Tempo / Prometheus / Loki.
   otelcol:
     image: otel/opentelemetry-collector-contrib:0.100.0
     container_name: otelcol
     restart: unless-stopped
     user: "0:0"
     ports:
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
-      - "8888:8888"     # métricas internas do collector
+      - "4317:4317"
+      - "4318:4318"
+      - "8888:8888"
     volumes:
       - ./otelcol/otelcol.yml:/etc/otelcol/otelcol.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro   # filelog (logs dos containers)
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
     command: --config=/etc/otelcol/otelcol.yml
     networks:
       - observability
