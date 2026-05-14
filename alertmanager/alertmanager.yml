@@ -8,9 +8,7 @@ global:
   smtp_auth_password: 'SUA_SENHA_DE_APP'     # no Gmail: Conta > Segurança > Palavras-passe de apps
   smtp_require_tls: true
 
-# ── Templates ─────────────────────────────────────────────────────────────────
-templates:
-  - '/etc/alertmanager/templates/*.tmpl'
+# templates section removed (no templates in use)
 
 # ── Roteamento ────────────────────────────────────────────────────────────────
 route:
