@@ -20,13 +20,6 @@ FRUITS = {"maca": {"name": "Maçã Vermelha", "price": 2.50, "stock": 150, "imag
 CSS = "* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: 'Segoe UI'; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; } header { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; } header h1 { color: #667eea; } nav { display: flex; gap: 1.5rem; } nav a { text-decoration: none; color: #667eea; font-weight: 500; } .cart-badge { background: #e74c3c; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; } .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; } .hero { background: white; border-radius: 10px; padding: 2rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 2rem; } .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2rem; } .product-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.3s; } .product-card:hover { transform: translateY(-5px); } .product-image { font-size: 4rem; text-align: center; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); } .product-info { padding: 1.5rem; } .product-name { font-weight: bold; margin-bottom: 0.5rem; } .product-price { font-size: 1.5rem; color: #e74c3c; font-weight: bold; } .product-stock { color: #27ae60; } .quantity-input { width: 60px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; } .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; } .btn-primary { background: #667eea; color: white; } .btn-primary:hover { background: #764ba2; } .btn-danger { background: #e74c3c; color: white; } footer { background: white; padding: 2rem; text-align: center; margin-top: 2rem; }"
 
 
-def _logo_prefix():
-    # Use static/logo.png if present in the app folder, otherwise fallback to an emoji
-    path = os.path.join(os.path.dirname(__file__), 'static', 'logo.png')
-    if os.path.exists(path):
-        return '<img src="/static/logo.png" alt="logo" style="height:48px;margin-right:12px;vertical-align:middle">'
-    return '🍎'
-
 @app.before_request
 def before():
     flask_request.start_time = time.time()
@@ -38,24 +31,6 @@ def after(response):
     request_duration.labels(endpoint=flask_request.path).observe(duration)
     if response.status_code >= 400:
         errors_total.labels(endpoint=flask_request.path, status=response.status_code).inc()
-    # If a logo file exists, replace the header emoji with the logo image in HTML responses
-    try:
-        if response.content_type and 'text/html' in response.content_type:
-            base = os.path.join(os.path.dirname(__file__), 'static')
-            png = os.path.join(base, 'logo.png')
-            svg = os.path.join(base, 'logo.svg')
-            if os.path.exists(png):
-                img_tag = b'<img src="/static/logo.png" alt="logo" style="height:48px;margin-right:12px;vertical-align:middle"> FruitStore'
-            elif os.path.exists(svg):
-                img_tag = b'<img src="/static/logo.svg" alt="logo" style="height:48px;margin-right:12px;vertical-align:middle"> FruitStore'
-            else:
-                img_tag = None
-            if img_tag:
-                body = response.get_data()
-                body = body.replace('🍎 FruitStore'.encode('utf-8'), img_tag)
-                response.set_data(body)
-    except Exception:
-        pass
     return response
 
 def get_cart():
