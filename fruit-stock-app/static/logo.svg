@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="180" viewBox="0 0 600 180">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0" stop-color="#4caf50"/>
+      <stop offset="1" stop-color="#2e7d32"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40,20)">
+    <!-- simple berries -->
+    <g transform="translate(0,30)">
+      <circle cx="40" cy="30" r="14" fill="#d32f2f"/>
+      <circle cx="58" cy="20" r="12" fill="#e53935"/>
+      <circle cx="22" cy="20" r="11" fill="#c62828"/>
+      <circle cx="110" cy="32" r="20" fill="#3366cc"/>
+      <!-- leaves -->
+      <path d="M70 10 C90 -10 120 -10 140 8" fill="none" stroke="#2e7d32" stroke-width="6" stroke-linecap="round" />
+    </g>
+    <!-- text -->
+    <text x="200" y="80" font-family="cursive, Arial" font-size="48" fill="url(#g1)">Os Cigarrilhas</text>
+  </g>
+</svg>
