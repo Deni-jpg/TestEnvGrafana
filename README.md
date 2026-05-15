@@ -1,98 +1,151 @@
-Observability Stack --- Grafana + Prometheus + Loki + Tempo + OTel Collector
-==========================================================================
+<p align="center">
+  <img src="logo2.png" alt="Os Cigarrilhas" width="280"/>
+</p>
 
-Arquitetura Simplificada
-------------------------
+<h1 align="center">Observability Test Environment</h1>
 
-Nesta configuração, o **OpenTelemetry Collector** é o único componente que toca no sistema operacional e nos containers, eliminando a necessidade de agentes externos como Node Exporter ou cAdvisor.
+<p align="center">
+  A complete observability stack running on Docker, built to monitor a demo Flask application (Fruit Stock App) with metrics, logs, traces and email alerting.
+</p>
 
-Fragmento do código
+---
 
-```
-graph TD
-    Apps[Aplicações / Serviços] -- OTLP --> OTel[OTel Collector]
-    Host[Métricas do Host] -- Interno --> OTel
-    Logs[Logs de Containers] -- Ingestão --> OTel
+## What's inside
 
-    OTel -- Métricas --> Prom[Prometheus]
-    OTel -- Logs --> Loki[Loki]
-    OTel -- Traces --> Tempo[Tempo]
-
-    Prom -- Visualização --> Grafana[Grafana]
-    Loki -- Visualização --> Grafana
-    Tempo -- Visualização --> Grafana
+This project spins up **8 containers** that work together to collect, store, visualize and alert on telemetry data:
 
 ```
-
-Inventário de Serviços
-----------------------
-
-| **Serviço** | **Porta** | **Função** |
-| --- | --- | --- |
-| **Grafana** | 3000 | Visualização de dados e Dashboards |
-| **Prometheus** | 9090 | Banco de dados para métricas (TSDB) |
-| **OTel Collector** | 4317/18 | Ponto central: Coleta métricas de host e logs |
-| **Loki** | 3100 | Banco de dados para logs |
-| **Tempo** | 3200 | Banco de dados para traces distribuídos |
-
-Vantagens desta Configuração
-----------------------------
-
-1.  **Agente Único:** Menos containers rodando em background. O OTel Collector resolve métricas de hardware e logs de software.
-
-2.  **Consistência:** Todas as métricas de infraestrutura usam o prefixo `system_` (padrão OTLP), facilitando a criação de alertas universais.
-
-3.  **Segurança:** Apenas um serviço (OTel) precisa de permissões de leitura nos volumes do Docker e `/proc`.
-
-Gestão da Stack
----------------
-
-### Iniciar
-
-Bash
-
+┌──────────────────┐        ┌──────────────────────────┐
+│  Fruit Stock App │─OTLP──►│  OpenTelemetry Collector │
+│     (Flask)      │        │                          │
+│    :5000         │        │  traces  → Tempo         │
+└──────────────────┘        │  metrics → Prometheus    │
+                            │  logs    → Loki          │
+┌──────────────────┐        └──────────────────────────┘
+│    cAdvisor      │──scrape──► Prometheus
+│    :8081         │               │
+└──────────────────┘               │ alert rules
+                                   ▼
+                             Alertmanager ──► Email
+                                :9093
+                                   │
+                                Grafana
+                                 :3000
 ```
+
+| Service | Port | What it does |
+|---------|------|--------------|
+| **Grafana** | 3000 | Dashboards and data visualization |
+| **Prometheus** | 9090 | Metrics storage and alert evaluation |
+| **Alertmanager** | 9093 | Alert routing and email notifications |
+| **Loki** | 3100 | Log aggregation |
+| **Tempo** | 3200 | Distributed tracing |
+| **OTel Collector** | 4317 / 4318 | Telemetry pipeline (receives OTLP, routes to backends) |
+| **cAdvisor** | 8081 | Container-level metrics (CPU, memory, network) |
+| **Fruit Stock App** | 5000 | Demo Flask app with Prometheus instrumentation |
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/Deni-jpg/TestEnvGrafana.git
+cd TestEnvGrafana
+git switch alertmanager
 docker compose up -d
-docker compose ps
-
 ```
 
-### Dashboard de Sistema
+Open **http://localhost:3000** and log in with `admin` / `admin`.
 
-Certifique-se de usar o Dashboard com queries baseadas em `system_`.
+Two dashboards are pre-loaded under **Dashboards → Demo**:
+- **System Overview** — system metrics, container stats, logs
+- **Website Metrics** — request rate, error rate and duration for the Fruit Stock App
 
--   **Exemplo de CPU:** `system_cpu_time_seconds_total`
+---
 
--   **Exemplo de RAM:** `system_memory_usage_bytes`
+## How the alert pipeline works
 
-### Enviar Telemetria da sua App
+Alerting follows a three-step flow:
 
-Aponte o SDK da sua aplicação para:
+1. **Prometheus** evaluates rules defined in `prometheus/alert_rules.yml` every 15 seconds
+2. When a condition is met, Prometheus fires the alert to **Alertmanager**
+3. Alertmanager groups, deduplicates and sends an **email** via Gmail SMTP
 
--   **gRPC (Preferencial):** `http://localhost:4317`
+### Configured alerts
 
--   **HTTP/JSON:** `http://localhost:4318`
+| Alert | Fires when | Severity |
+|-------|-----------|----------|
+| FruitAppDown | The app stops responding for 30s | critical |
+| HighErrorRate | Error rate > 0.1/s for 2 minutes | warning |
+| HighLatency | p95 latency > 1s for 2 minutes | warning |
 
-Troubleshooting
----------------
+### Setting up email notifications
 
--   **Verificar se as métricas do Host estão sendo geradas:**
+1. Enable [2-Step Verification](https://myaccount.google.com/signinoptions/two-step-verification) on your Google account
+2. Create an [App Password](https://myaccount.google.com/apppasswords)
+3. Edit `alertmanager/alertmanager.yml`:
+```yaml
+smtp_auth_username: 'your-email@gmail.com'
+smtp_auth_password: 'xxxx xxxx xxxx xxxx'
+```
+4. Change the `to:` field in both receivers to your destination email
 
-    Bash
+---
 
-    ```
-    curl http://localhost:8889/metrics | grep system_
+## The demo app
 
-    ```
+The **Fruit Stock App** is a simple Flask e-commerce page that sells fruits. It exposes Prometheus metrics at `/metrics` using the RED method:
 
--   **Verificar se os logs estão chegando no Loki:**
+- `fruit_app_requests_total` — total requests by method and endpoint
+- `fruit_app_errors_total` — HTTP errors by endpoint and status code
+- `fruit_app_request_duration_seconds` — request latency histogram
 
-    Vá ao **Grafana -> Explore**, selecione o datasource **Loki** e use a query `{job="otel-collector"}` ou `{container_name=~".+"}`.
+Visit **http://localhost:5000** to interact with the store and generate telemetry.
 
--   **Limpeza de dados (Reset):**
+---
 
-    Bash
+## Project structure
 
-    ```
-    docker compose down -v
-    ```
+```
+├── docker-compose.yml
+├── prometheus/
+│   ├── prometheus.yml          # scrape targets + alerting config
+│   └── alert_rules.yml         # alert conditions
+├── alertmanager/
+│   └── alertmanager.yml        # email routing + SMTP config
+├── otelcol/
+│   └── otelcol.yml             # OTel pipelines (traces/metrics/logs)
+├── loki/
+│   └── loki.yml
+├── tempo/
+│   └── tempo.yml
+├── grafana/
+│   ├── provisioning/           # auto-configured datasources
+│   └── dashboards/             # pre-loaded dashboards
+└── fruit-stock-app/
+    ├── Dockerfile
+    └── app.py                  # Flask app with Prometheus metrics
+```
+
+---
+
+## Useful links after startup
+
+| What | URL |
+|------|-----|
+| Grafana | http://localhost:3000 |
+| Prometheus targets | http://localhost:9090/targets |
+| Prometheus alerts | http://localhost:9090/alerts |
+| Alertmanager | http://localhost:9093 |
+| Fruit Stock App | http://localhost:5000 |
+| App metrics | http://localhost:5000/metrics |
+| cAdvisor | http://localhost:8081 |
+
+---
+
+## Cleanup
+
+```bash
+docker compose down       # stop everything
+docker compose down -v    # stop and delete all stored data
+```
