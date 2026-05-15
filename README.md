@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Os Cigarrilhas" width="280"/>
+  <img src="logo2.png" alt="Os Cigarrilhas" width="280"/>
 </p>
 
 <h1 align="center">Observability Test Environment</h1>
