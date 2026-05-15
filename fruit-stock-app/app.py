@@ -1,4 +1,4 @@
-import random, time, secrets, os
+import random, time, secrets
 from flask import Flask, jsonify, render_template_string, session, request as flask_request
 from prometheus_client import Counter, Histogram, generate_latest
 
@@ -18,7 +18,6 @@ FRUITS = {"maca": {"name": "Maçã Vermelha", "price": 2.50, "stock": 150, "imag
           "melancia": {"name": "Melancia", "price": 4.50, "stock": 60, "image": "🍉", "desc": "Melancia refrescante"}}
 
 CSS = "* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: 'Segoe UI'; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; } header { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; } header h1 { color: #667eea; } nav { display: flex; gap: 1.5rem; } nav a { text-decoration: none; color: #667eea; font-weight: 500; } .cart-badge { background: #e74c3c; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; } .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; } .hero { background: white; border-radius: 10px; padding: 2rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 2rem; } .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2rem; } .product-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.3s; } .product-card:hover { transform: translateY(-5px); } .product-image { font-size: 4rem; text-align: center; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); } .product-info { padding: 1.5rem; } .product-name { font-weight: bold; margin-bottom: 0.5rem; } .product-price { font-size: 1.5rem; color: #e74c3c; font-weight: bold; } .product-stock { color: #27ae60; } .quantity-input { width: 60px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; } .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; } .btn-primary { background: #667eea; color: white; } .btn-primary:hover { background: #764ba2; } .btn-danger { background: #e74c3c; color: white; } footer { background: white; padding: 2rem; text-align: center; margin-top: 2rem; }"
-
 
 @app.before_request
 def before():
