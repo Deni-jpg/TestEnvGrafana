@@ -1,6 +1,15 @@
 groups:
   - name: fruit-app.rules
     rules:
+      - alert: Teste de alerta #só teste
+        expr: vector(1)
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alerta de teste — sempre ativo"
+          description: "Este alerta existe apenas para validar que o pipeline Prometheus → Alertmanager → email está up."
+
       - alert: FruitAppDown
         expr: up{job="fruit-stock-app"} == 0
         for: 30s
@@ -26,4 +35,4 @@ groups:
           severity: warning
         annotations:
           summary: "Latência elevada (p95) na FruitStore"
-          description: "Percentil 95 de latência maior que 1s por endpoint." 
+          description: "Percentil 95 de latência maior que 1s por endpoint."
