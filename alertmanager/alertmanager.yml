@@ -1,0 +1,83 @@
+global:
+  resolve_timeout: 5m
+
+  # ── Configuração SMTP ────────────────────────────────────────────────────────
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alertmanagertester123@gmail.com'
+  smtp_auth_username: 'alertmanagertester123@gmail.com'
+  smtp_auth_password: 'kevy loht awzl qjvp'
+  smtp_require_tls: true
+
+# templates section removed (no templates in use)
+
+# ── Roteamento ────────────────────────────────────────────────────────────────
+route:
+  receiver: 'email-default'
+  group_by: ['alertname', 'severity']
+  group_wait: 30s       # aguarda 30s para agrupar alertas antes de enviar
+  group_interval: 5m    # intervalo mínimo entre emails do mesmo grupo
+  repeat_interval: 1h   # reenvia o alerta se continuar ativo ao fim de 4h
+
+  routes:
+    # Críticos — notifica mais depressa e repete mais vezes
+    - matchers:
+        - severity="critical"
+      receiver: 'email-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warnings — notifica normalmente
+    - matchers:
+        - severity="warning"
+      receiver: 'email-default'
+      repeat_interval: 4h
+
+# ── Inibições ─────────────────────────────────────────────────────────────────
+# Se já existe um alerta crítico, suprime o warning equivalente (evita spam)
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname']
+
+# ── Receivers ─────────────────────────────────────────────────────────────────
+receivers:
+
+  - name: 'email-critical'
+    email_configs:
+      - to: 'alertmanagertester123@gmail.com'
+        send_resolved: true
+        headers:
+          Subject: '🔴 [CRÍTICO] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2 style="color:#d32f2f;">🔴 Alerta Crítico</h2>
+          {{ range .Alerts }}
+          <div style="border-left: 4px solid #d32f2f; padding: 12px; margin-bottom: 12px; font-family: Arial, sans-serif;">
+            <strong>{{ .Annotations.summary }}</strong><br/>
+            <p>{{ .Annotations.description }}</p>
+            <p><strong>Job:</strong> {{ .Labels.job }}<br/>
+            <strong>Início:</strong> {{ .StartsAt.Format "02/01/2006 às 15:04:05" }}</p>
+            {{ if .Annotations.runbook }}<p><strong>Runbook:</strong> {{ .Annotations.runbook }}</p>{{ end }}
+          </div>
+          {{ end }}
+
+  - name: 'email-default'
+    email_configs:
+      - to: 'alertmanagertester123@gmail.com'
+        send_resolved: true
+        headers:
+          Subject: '⚠️ [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2 style="color:{{ if eq .Status "firing" }}#f57c00{{ else }}#388e3c{{ end }};">
+            {{ if eq .Status "firing" }}⚠️ Alerta Ativo{{ else }}✅ Resolvido{{ end }}
+          </h2>
+          {{ range .Alerts }}
+          <div style="border-left: 4px solid {{ if eq .Labels.severity "critical" }}#d32f2f{{ else }}#f57c00{{ end }}; padding: 12px; margin-bottom: 12px; font-family: Arial, sans-serif;">
+            <strong>{{ .Annotations.summary }}</strong><br/>
+            <p>{{ .Annotations.description }}</p>
+            <p><strong>Severidade:</strong> {{ .Labels.severity | toUpper }}<br/>
+            <strong>Job:</strong> {{ .Labels.job }}<br/>
+            <strong>Início:</strong> {{ .StartsAt.Format "02/01/2006 às 15:04:05" }}</p>
+          </div>
+          {{ end }}

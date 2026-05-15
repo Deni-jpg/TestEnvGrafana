@@ -5,6 +5,14 @@ global:
     environment: "demo"
     region: "local"
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - 'alert_rules.yml'
+
 # As métricas do sistema e dos containers chegam via remote write do OTel Collector.
 # O Prometheus só precisa de se auto-monitorizar aqui.
 scrape_configs:
