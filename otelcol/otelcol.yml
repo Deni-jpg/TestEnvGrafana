@@ -67,6 +67,16 @@ receivers:
       - type: move
         from: attributes.container_id
         to: resource["container.id"]
+      # Extract log severity from structured "level=LEVEL" format (fruit-stock-app)
+      - type: regex_parser
+        id: extract_level
+        regex: 'level=(?P<level>[A-Z]+)'
+        parse_from: body
+        on_error: send_quiet
+      - type: severity_parser
+        id: set_severity
+        parse_from: attributes.level
+        on_error: send_quiet
 
 processors:
 

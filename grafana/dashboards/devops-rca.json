@@ -1,0 +1,385 @@
+{
+  "title": "DevOps — Root Cause Analysis",
+  "uid": "devops-rca",
+  "description": "Dashboard de análise de causa raiz com correlação Métricas → Logs → Traces",
+  "tags": ["devops", "rca", "errors", "tracing"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "schemaVersion": 38,
+  "version": 1,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+
+    {
+      "id": 100, "type": "row",
+      "title": "🎯 Visão Rápida — Estado Atual",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 1, "type": "stat",
+      "title": "Erros Simulados — Total",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 0,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [
+            {"color": "green",  "value": null},
+            {"color": "yellow", "value": 5},
+            {"color": "red",    "value": 20}
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background", "graphMode": "area",
+        "text": {}
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum(fruit_app_simulated_errors_total) or vector(0)",
+        "legendFormat": "total"
+      }]
+    },
+
+    {
+      "id": 2, "type": "stat",
+      "title": "Taxa de Erros HTTP (2m)",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps", "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [
+            {"color": "green",  "value": null},
+            {"color": "yellow", "value": 0.05},
+            {"color": "red",    "value": 0.2}
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background", "graphMode": "area",
+        "text": {}
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum(rate(fruit_app_errors_total[2m])) or vector(0)",
+        "legendFormat": "erros/s"
+      }]
+    },
+
+    {
+      "id": 3, "type": "stat",
+      "title": "P95 Latência (5m)",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "decimals": 3,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [
+            {"color": "green",  "value": null},
+            {"color": "yellow", "value": 0.5},
+            {"color": "red",    "value": 2.0}
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background", "graphMode": "area",
+        "text": {}
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95"
+      }]
+    },
+
+    {
+      "id": 4, "type": "stat",
+      "title": "App Online",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "DOWN",  "color": "red"},   "1": {"text": "UP", "color": "green"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A", "color": "gray"}}}
+          ],
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [
+            {"color": "red",   "value": null},
+            {"color": "green", "value": 1}
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background", "graphMode": "none",
+        "text": {}
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum(up{job=\"fruit-stock-app\"})",
+        "legendFormat": "status"
+      }]
+    },
+
+    {
+      "id": 101, "type": "row",
+      "title": "❌ Análise de Erros Simulados",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 5, "type": "timeseries",
+      "title": "Erros Simulados — Taxa por Tipo (erros/min)",
+      "gridPos": { "x": 0, "y": 6, "w": 16, "h": 9 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 2,
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "spanNulls": false }
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "database_timeout"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "payment_gateway"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]},
+          {"matcher": {"id": "byName", "options": "unhandled_exception"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (error_type) (increase(fruit_app_simulated_errors_total[1m]))",
+        "legendFormat": "{{error_type}}"
+      }]
+    },
+
+    {
+      "id": 6, "type": "piechart",
+      "title": "Distribuição por Tipo de Erro",
+      "gridPos": { "x": 16, "y": 6, "w": 8, "h": 9 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "database_timeout"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "payment_gateway"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]},
+          {"matcher": {"id": "byName", "options": "unhandled_exception"},
+           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (error_type) (fruit_app_simulated_errors_total)",
+        "legendFormat": "{{error_type}}"
+      }]
+    },
+
+    {
+      "id": 102, "type": "row",
+      "title": "⏱️ Performance & Latência",
+      "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 7, "type": "timeseries",
+      "title": "Latência — P50 / P90 / P95 / P99",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineWidth": 2, "fillOpacity": 5 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.50, sum(rate(fruit_app_request_duration_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.90, sum(rate(fruit_app_request_duration_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p90"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum(rate(fruit_app_request_duration_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, sum(rate(fruit_app_request_duration_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+
+    {
+      "id": 8, "type": "timeseries",
+      "title": "Taxa de Erros HTTP por Endpoint",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "sum by (endpoint) (rate(fruit_app_errors_total[2m]))",
+        "legendFormat": "{{endpoint}}"
+      }]
+    },
+
+    {
+      "id": 103, "type": "row",
+      "title": "📋 Correlação Logs → Traces (Root Cause)",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 9, "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 25, "w": 24, "h": 3 },
+      "options": {
+        "mode": "markdown",
+        "content": "### Como fazer Root Cause Analysis\n**1.** No painel **Error Logs** abaixo, expande uma linha de log que contenha `traceID=`  **2.** Clica no link **\"Ver Trace no Tempo →\"** que aparece nos campos derivados  **3.** Vês todos os spans da operação com atributos, exceção e duração  **4.** Alternativa: **Explore → Loki** → filtro `{container_id=~\".+\"} |= \"level=ERROR\" |= \"fruit-stock-app\"` → clica no TraceID"
+      }
+    },
+
+    {
+      "id": 10, "type": "timeseries",
+      "title": "Volume de Logs de Erro (fruit-stock-app)",
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 5 },
+      "datasource": { "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "lineWidth": 1, "fillOpacity": 40, "drawStyle": "bars" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [{
+        "datasource": { "uid": "loki" },
+        "expr": "sum(count_over_time({container_id=~\".+\"} |= \"fruit-stock-app\" |= \"level=ERROR\" [1m]))",
+        "legendFormat": "erros/min"
+      }]
+    },
+
+    {
+      "id": 11, "type": "logs",
+      "title": "Error Logs — fruit-stock-app (clica no TraceID para abrir Trace)",
+      "gridPos": { "x": 0, "y": 33, "w": 24, "h": 11 },
+      "datasource": { "uid": "loki" },
+      "options": {
+        "dedupStrategy": "none",
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false
+      },
+      "targets": [{
+        "datasource": { "uid": "loki" },
+        "expr": "{container_id=~\".+\"} !~ \".*component=frontend.*\" |= \"service=fruit-stock-app\" |= \"level=ERROR\"",
+        "legendFormat": ""
+      }]
+    },
+
+    {
+      "id": 104, "type": "row",
+      "title": "🚨 Alertas Prometheus Ativos",
+      "gridPos": { "x": 0, "y": 44, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 12, "type": "table",
+      "title": "Alertas a Disparar (ALERTS firing)",
+      "gridPos": { "x": 0, "y": 45, "w": 24, "h": 8 },
+      "datasource": { "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "alertname" },
+            "properties": [{"id": "displayName", "value": "Alerta"}, {"id": "custom.width", "value": 220}]
+          },
+          {
+            "matcher": { "id": "byName", "options": "severity" },
+            "properties": [
+              {"id": "displayName", "value": "Severidade"},
+              {"id": "custom.width", "value": 120},
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {
+                  "critical": {"text": "CRÍTICO", "color": "red"},
+                  "warning":  {"text": "AVISO",   "color": "orange"}
+                }}
+              ]}
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "alertstate" },
+            "properties": [{"id": "displayName", "value": "Estado"}, {"id": "custom.width", "value": 100}]
+          }
+        ]
+      },
+      "options": {
+        "sortBy": [{"displayName": "Severidade", "desc": false}],
+        "footer": { "show": false }
+      },
+      "targets": [{
+        "datasource": { "uid": "prometheus" },
+        "expr": "ALERTS{alertstate=\"firing\"}",
+        "format": "table",
+        "instant": true,
+        "legendFormat": ""
+      }]
+    }
+
+  ]
+}

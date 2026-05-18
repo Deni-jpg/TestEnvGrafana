@@ -1,7 +1,7 @@
 groups:
   - name: fruit-app.rules
     rules:
-      - alert: Teste de alerta #só teste
+      - alert: Teste de alerta #teste
         expr: vector(1)
         for: 0s
         labels:

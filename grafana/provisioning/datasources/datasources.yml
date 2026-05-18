@@ -25,6 +25,7 @@ datasources:
           matcherRegex: "traceID=(\\w+)"
           name: TraceID
           url: "$${__value.raw}"
+          urlDisplayLabel: "Ver Trace no Tempo →"
 
   - name: Tempo
     type: tempo
@@ -38,6 +39,9 @@ datasources:
         spanStartTimeShift: "-1h"
         spanEndTimeShift: "1h"
         filterByTraceID: true
+        mapTagsIndex: false  # Diz para não tentar adivinhar labels automáticas
+        customQuery: true
+        query: '{container_id=~".+"} |= "$${__trace.id}"'
       tracesToMetrics:
         datasourceUid: prometheus
       serviceMap:
