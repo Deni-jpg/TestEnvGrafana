@@ -1,6 +1,6 @@
 {
-  "title": "FruitStore observability",
-  "uid": "fruit-app-red-complete",
+  "title": "FruitStore dashboard",
+  "uid": "site-dashboard",
   "tags": ["application"],
   "timezone": "browser",
   "refresh": "10s",
@@ -49,7 +49,7 @@
         }
       },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
-      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "(sum(rate(fruit_app_errors_total[1m])) / sum(rate(fruit_app_requests_total[1m]))) * 100" }]
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "(sum(rate(fruit_app_simulated_errors_total[1m])) / sum(rate(fruit_app_requests_total[1m]))) * 100" }]
     },
 
     {
@@ -71,7 +71,7 @@
       "datasource": { "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "red" } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
-      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(fruit_app_errors_total)" }]
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(fruit_app_simulated_errors_total)" }]
     },
 
     {

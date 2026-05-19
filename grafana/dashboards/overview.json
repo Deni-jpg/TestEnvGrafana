@@ -1,6 +1,6 @@
 {
-  "title": "Observability demo",
-  "uid": "demo-overview",
+  "title": "Sistema dashboard",
+  "uid": "demo-sistema",
   "tags": ["demo", "sistemas"],
   "timezone": "browser",
   "refresh": "10s",
@@ -161,8 +161,14 @@
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes",
-          "thresholds": { "steps": [{"color":"green","value":null},{"color":"yellow","value":268435456},{"color":"red","value":536870912}] }
+          "unit": "decbytes",
+          "thresholds": { 
+            "steps": [
+              {"color":"green","value":null},
+              {"color":"yellow","value":268435456},
+              {"color":"red","value":536870912}
+            ] 
+          }
         }
       },
       "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] }, "showUnfilled": true },
@@ -226,11 +232,24 @@
     },
 
     {
-      "id": 31, "type": "logs", "title": "Stream de Logs",
+      "id": 31, 
+      "type": "logs", 
+      "title": "Stream de Logs — Apenas Aplicação",
       "gridPos": { "x": 0, "y": 51, "w": 24, "h": 10 },
       "datasource": { "uid": "loki" },
-      "options": { "dedupStrategy": "none", "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true, "enableLogDetails": true },
-      "targets": [{ "datasource": { "uid": "loki" }, "expr": "{container_id=~\".+\"}" }]
+      "options": { 
+        "dedupStrategy": "none", 
+        "showLabels": false, 
+        "showTime": true, 
+        "sortOrder": "Descending", 
+        "wrapLogMessage": true, 
+        "enableLogDetails": true 
+      },
+      "targets": [{ 
+        "datasource": { "uid": "loki" }, 
+        "expr": "{container_id=~\".+\"} |= \"service=fruit-stock-app\" !~ \".*/metrics.*\"", 
+        "legendFormat": "" 
+      }]
     }
   ]
 }

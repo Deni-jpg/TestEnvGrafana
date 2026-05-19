@@ -1,8 +1,8 @@
 {
-  "title": "DevOps — Root Cause Analysis",
-  "uid": "devops-rca",
+  "title": "DevOps dashboard",
+  "uid": "devops-dashboard",
   "description": "Dashboard de análise de causa raiz com correlação Métricas → Logs → Traces",
-  "tags": ["devops", "rca", "errors", "tracing"],
+  "tags": ["devops", "rca"],
   "timezone": "browser",
   "refresh": "10s",
   "time": { "from": "now-1h", "to": "now" },
@@ -14,7 +14,7 @@
 
     {
       "id": 100, "type": "row",
-      "title": "🎯 Visão Rápida — Estado Atual",
+      "title": "Visão Rápida — Estado Atual",
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -136,14 +136,14 @@
 
     {
       "id": 101, "type": "row",
-      "title": "❌ Análise de Erros Simulados",
+      "title": "Análise de Erros",
       "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
       "collapsed": false
     },
 
     {
       "id": 5, "type": "timeseries",
-      "title": "Erros Simulados — Taxa por Tipo (erros/min)",
+      "title": "Erros — Taxa por Tipo (erros/min)",
       "gridPos": { "x": 0, "y": 6, "w": 16, "h": 9 },
       "datasource": { "uid": "prometheus" },
       "fieldConfig": {
@@ -202,7 +202,7 @@
 
     {
       "id": 102, "type": "row",
-      "title": "⏱️ Performance & Latência",
+      "title": "Performance & Latência",
       "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -270,7 +270,7 @@
 
     {
       "id": 103, "type": "row",
-      "title": "📋 Correlação Logs → Traces (Root Cause)",
+      "title": "Correlação Logs → Traces (Root Cause)",
       "gridPos": { "x": 0, "y": 24, "w": 24, "h": 1 },
       "collapsed": false
     },
@@ -278,7 +278,7 @@
     {
       "id": 9, "type": "text",
       "title": "",
-      "gridPos": { "x": 0, "y": 25, "w": 24, "h": 3 },
+      "gridPos": { "x": 0, "y": 25, "w": 24, "h": 4 },
       "options": {
         "mode": "markdown",
         "content": "### Como fazer Root Cause Analysis\n**1.** No painel **Error Logs** abaixo, expande uma linha de log que contenha `traceID=`  **2.** Clica no link **\"Ver Trace no Tempo →\"** que aparece nos campos derivados  **3.** Vês todos os spans da operação com atributos, exceção e duração  **4.** Alternativa: **Explore → Loki** → filtro `{container_id=~\".+\"} |= \"level=ERROR\" |= \"fruit-stock-app\"` → clica no TraceID"
@@ -303,7 +303,7 @@
       },
       "targets": [{
         "datasource": { "uid": "loki" },
-        "expr": "sum(count_over_time({container_id=~\".+\"} |= \"fruit-stock-app\" |= \"level=ERROR\" [1m]))",
+        "expr": "sum(count_over_time({container_id=~\".+\"} !~ \".*component=frontend.*\" |= \"fruit-stock-app\" |= \"level=ERROR\" [1m]))",
         "legendFormat": "erros/min"
       }]
     },
@@ -331,7 +331,7 @@
 
     {
       "id": 104, "type": "row",
-      "title": "🚨 Alertas Prometheus Ativos",
+      "title": "Alertas Prometheus Ativos",
       "gridPos": { "x": 0, "y": 44, "w": 24, "h": 1 },
       "collapsed": false
     },
